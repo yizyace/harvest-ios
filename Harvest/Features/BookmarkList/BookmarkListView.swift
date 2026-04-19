@@ -71,6 +71,11 @@ struct BookmarkListView: View {
             }
         }
         .refreshable { await model.refresh() }
+        .navigationDestination(for: UUID.self) { id in
+            if let bookmark = model.bookmarks.first(where: { $0.id == id }) {
+                BookmarkDetailView(listItem: bookmark, listModel: model)
+            }
+        }
     }
 
     @ViewBuilder private var filterMenu: some View {
