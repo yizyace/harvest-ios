@@ -1,0 +1,75 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Xcode — user-specific state (breakpoints, window layout, last-opened file)
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+
+# Xcode — build output
+build/
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# XcodeGen generates the .xcodeproj from project.yml — don't track it.
+Harvest.xcodeproj/
+
+# Xcode — other
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+# Package.resolved is tracked for apps to lock dependency versions.
+# Uncomment the next line if this repo is a library, not an app.
+# Package.resolved
+
+# CocoaPods (uncomment if you adopt CocoaPods)
+# Pods/
+# Podfile.lock is tracked for apps; uncomment for libraries.
+# Podfile.lock
+
+# Carthage (uncomment if you adopt Carthage)
+# Carthage/Build/
+# Carthage/Checkouts
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code Injection
+iOSInjectionProject/
+
+# Secrets — never commit API keys, signing creds, or local config
+*.pem
+*.p12
+*.mobileprovision
+*.cer
+.env
+.env.*
+!.env.example
+Secrets.xcconfig
+GoogleService-Info.plist.local
+
+# Editors / tools
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Claude Code local
+.claude/settings.local.json
