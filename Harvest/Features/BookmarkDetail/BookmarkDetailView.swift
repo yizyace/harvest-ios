@@ -14,6 +14,11 @@ struct BookmarkDetailView: View {
     var body: some View {
         content
             .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) {
+                if let model, model.phase == .loaded {
+                    transitionBar(for: model)
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
@@ -124,6 +129,38 @@ struct BookmarkDetailView: View {
         case .pending, .processing: return "We're still fetching the article. Pull to refresh."
         case .failed: return "We couldn't extract this one. Open the original instead."
         case .ready: return ""
+        }
+    }
+
+    // MARK: Reading-status transition bar
+
+    @ViewBuilder private func transitionBar(for model: BookmarkDetailModel) -> some View {
+        let transitions = model.bookmark.readingStatus.availableTransitions
+        if transitions.isEmpty { EmptyView() } else {
+            HStack(spacing: 12) {
+                ForEach(transitions, id: \.target) { transition in
+                    Button {
+                        Task { await model.apply(transition: transition.target) }
+                    } label: {
+                        Label(transition.label, systemImage: icon(for: transition.target))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(model.actionInFlight)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+            .background(.bar)
+        }
+    }
+
+    private func icon(for status: ReadingStatus) -> String {
+        switch status {
+        case .read: return "checkmark.circle"
+        case .archived: return "archivebox"
+        case .unread: return "arrow.uturn.backward"
         }
     }
 }

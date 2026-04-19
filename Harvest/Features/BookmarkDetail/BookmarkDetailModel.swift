@@ -43,6 +43,33 @@ final class BookmarkDetailModel {
         }
     }
 
+    // MARK: Reading-status transitions
+
+    func apply(transition target: ReadingStatus) async {
+        guard !actionInFlight else { return }
+        actionInFlight = true
+        actionError = nil
+        defer { actionInFlight = false }
+
+        // TODO(learning-mode): optimistic vs. pessimistic. Current
+        // implementation is *pessimistic* — waits for the server to confirm
+        // before mutating `bookmark`. The alternative is to mutate locally
+        // first and roll back on 422. The handoff pins the 422 rules so
+        // optimistic is tractable, but the latency on a good connection is
+        // small enough that pessimistic may feel fine. Revisit once the UI
+        // is wired and we can feel the delay.
+        do {
+            let updated = try await api.updateBookmark(
+                id: bookmark.id,
+                update: BookmarkUpdate(readingStatus: target)
+            )
+            bookmark = updated
+            listModel?.replace(updated)
+        } catch {
+            actionError = (error as? APIError)?.userFacingMessage ?? "Couldn't update status."
+        }
+    }
+
     func delete() async -> Bool {
         guard !actionInFlight else { return false }
         actionInFlight = true
