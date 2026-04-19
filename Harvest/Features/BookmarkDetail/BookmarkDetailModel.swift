@@ -70,6 +70,26 @@ final class BookmarkDetailModel {
         }
     }
 
+    // MARK: Tags + custom title
+
+    func applyEdits(customTitle: String?, tags: [String]?) async {
+        guard !actionInFlight else { return }
+        actionInFlight = true
+        actionError = nil
+        defer { actionInFlight = false }
+
+        do {
+            let updated = try await api.updateBookmark(
+                id: bookmark.id,
+                update: BookmarkUpdate(customTitle: customTitle, tags: tags)
+            )
+            bookmark = updated
+            listModel?.replace(updated)
+        } catch {
+            actionError = (error as? APIError)?.userFacingMessage ?? "Couldn't save edits."
+        }
+    }
+
     func delete() async -> Bool {
         guard !actionInFlight else { return false }
         actionInFlight = true

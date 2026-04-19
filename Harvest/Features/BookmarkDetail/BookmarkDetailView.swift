@@ -10,6 +10,7 @@ struct BookmarkDetailView: View {
 
     @State private var model: BookmarkDetailModel?
     @State private var showDeleteConfirm = false
+    @State private var showEditSheet = false
 
     var body: some View {
         content
@@ -22,6 +23,9 @@ struct BookmarkDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        Button { showEditSheet = true } label: {
+                            Label("Edit title and tags", systemImage: "pencil")
+                        }
                         Link("Open in browser", destination: (model?.bookmark ?? listItem).url)
                         Button(role: .destructive) {
                             showDeleteConfirm = true
@@ -31,6 +35,11 @@ struct BookmarkDetailView: View {
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
+                }
+            }
+            .sheet(isPresented: $showEditSheet) {
+                if let model {
+                    BookmarkEditSheet(model: model)
                 }
             }
             .confirmationDialog(
