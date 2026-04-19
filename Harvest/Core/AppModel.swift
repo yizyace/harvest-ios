@@ -81,4 +81,20 @@ final class AppModel {
             lastError = apiError.userFacingMessage
         }
     }
+
+    // MARK: Incoming URLs (Universal Links + paste-token fallback)
+
+    /// Parses `https://harvest.bitrat.io/auth/verify?token=…` and completes
+    /// sign-in. Returns true if the URL was recognised.
+    @discardableResult
+    func handleIncomingURL(_ url: URL) async -> Bool {
+        guard let token = UniversalLinks.verifyToken(from: url) else { return false }
+        do {
+            try await completeSignIn(withToken: token)
+            return true
+        } catch {
+            lastError = (error as? APIError)?.userFacingMessage ?? "Sign-in failed."
+            return false
+        }
+    }
 }

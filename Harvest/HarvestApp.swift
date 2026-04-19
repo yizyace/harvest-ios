@@ -10,6 +10,9 @@ struct HarvestApp: App {
             RootView()
                 .environment(appModel)
                 .task { await appModel.validateSessionOnLaunch() }
+                .onOpenURL { url in
+                    Task { await appModel.handleIncomingURL(url) }
+                }
         }
     }
 }
