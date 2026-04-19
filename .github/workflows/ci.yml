@@ -1,10 +1,12 @@
 name: CI
 
 on:
+  # Only run when something lands on main. The expensive macOS runner is a
+  # safety net after the local pre-push hook, not a per-branch gate. See
+  # .githooks/pre-push for the local xcodebuild test run.
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

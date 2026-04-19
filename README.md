@@ -13,21 +13,38 @@ Chrome extension.
 
 ```
 xcodegen generate
+git config core.hooksPath .githooks
 open Harvest.xcodeproj
 ```
 
 The `.xcodeproj` is gitignored; regenerate it from `project.yml` whenever you
-pull or change targets.
+pull or change targets. The `core.hooksPath` line wires up the pre-push hook
+described below.
 
-### Running tests from the CLI
+## Tests
+
+Local runs are the primary gate. The committed `.githooks/pre-push` hook runs
+`xcodegen generate && xcodebuild test` before every push; activate it once
+with the `core.hooksPath` line above. Skip with `git push --no-verify` for
+known-red WIP branches.
+
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs on push to `main` only —
+i.e., after a merge — as a safety net, not a per-branch gate. macOS runners
+are billed at 10× on private repos, so this stays cheap.
+
+### Running tests manually
 
 ```
 xcodegen generate
-xcodebuild \
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -scheme Harvest \
-  -destination 'platform=iOS Simulator,name=iPhone 15' \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
   test
 ```
+
+The `DEVELOPER_DIR` prefix is only needed on machines where `xcode-select -p`
+still points at CommandLineTools. To make it permanent:
+`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
 
 ## Project shape
 

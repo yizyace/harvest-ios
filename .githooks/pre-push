@@ -1,0 +1,30 @@
+#!/bin/sh
+# Pre-push: regenerate the project and run the test suite. Blocks push on
+# failure. Skip with `git push --no-verify` for WIP branches you know aren't
+# green.
+#
+# Activate once per clone:   git config core.hooksPath .githooks
+#
+# Requires: xcodegen + Xcode.app installed. DEVELOPER_DIR is set below so
+# machines where `xcode-select -p` still points at CommandLineTools don't
+# need a sudo xcode-select dance.
+
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+if ! command -v xcodegen >/dev/null 2>&1; then
+    echo "pre-push: xcodegen not found — install with 'brew install xcodegen'." >&2
+    exit 1
+fi
+
+echo "→ pre-push: regenerating Xcode project"
+xcodegen generate >/dev/null
+
+echo "→ pre-push: running xcodebuild test"
+DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}" \
+  xcodebuild \
+    -scheme Harvest \
+    -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+    -configuration Debug \
+    test
