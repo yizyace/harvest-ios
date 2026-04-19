@@ -22,28 +22,9 @@ struct RootView: View {
 
     var body: some View {
         if appModel.isSignedIn {
-            SignedInPlaceholder()
+            BookmarkListView()
         } else {
             SignInView()
-        }
-    }
-}
-
-// Replaced in commit 7 with the real BookmarkListView.
-private struct SignedInPlaceholder: View {
-    @Environment(AppModel.self) private var appModel
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                Text("Signed in as \(appModel.sessionStore.user?.email ?? "—")")
-                Button("Sign out") {
-                    Task { await appModel.signOut() }
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
-            .navigationTitle("Harvest")
         }
     }
 }
