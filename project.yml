@@ -78,6 +78,22 @@ targets:
     platform: iOS
     sources:
       - path: ShareExtension
+      # Share networking/models with the main app by compiling a
+      # subset of Harvest/Core into the extension's module. These files
+      # must not import SwiftUI — keep them transport-only. See
+      # docs for ShareAPIClient.swift.
+      - path: Harvest/Core/Auth/Keychain.swift
+      - path: Harvest/Core/Auth/SessionPersistence.swift
+      - path: Harvest/Core/Models/Bookmark.swift
+      - path: Harvest/Core/Models/HarvestUser.swift
+      - path: Harvest/Core/Models/Pagination.swift
+      - path: Harvest/Core/Models/ProcessingStatus.swift
+      - path: Harvest/Core/Models/ReadingStatus.swift
+      - path: Harvest/Core/API/APIError.swift
+      - path: Harvest/Core/API/Endpoints.swift
+      - path: Harvest/Core/API/HarvestAPI.swift
+      - path: Harvest/Core/API/ISO8601.swift
+      - path: Harvest/Core/Environment.swift
     configFiles:
       Debug: Config/Debug.xcconfig
       Release: Config/Release.xcconfig
