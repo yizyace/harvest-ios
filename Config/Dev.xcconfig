@@ -1,0 +1,18 @@
+// Development build settings. Bound to Debug-Dev + Release-Dev, which back
+// the `Harvest Dev` scheme. Distinct Bundle ID so this app coexists with the
+// prod build on-device; distinct keychain group so the two don't share
+// session tokens.
+//
+// The dev host harvest.bitrat.test is not publicly resolvable — it's the
+// monolith owner's local Rails server. iOS on a device/simulator may not
+// reach it without per-device DNS + CA trust setup. Universal Links are
+// off here because iOS can't fetch an AASA file from a private host.
+
+#include "Shared.xcconfig"
+
+HARVEST_BUNDLE_ID = io.bitrat.harvest.dev
+HARVEST_DISPLAY_NAME = Harvest Dev
+HARVEST_BASE_URL = https:/$()/harvest.bitrat.test
+HARVEST_SUPPORTS_UNIVERSAL_LINKS = NO
+HARVEST_MAIN_ENTITLEMENTS = Harvest/Harvest-Dev.entitlements
+HARVEST_SHARE_ENTITLEMENTS = ShareExtension/ShareExtension-Dev.entitlements

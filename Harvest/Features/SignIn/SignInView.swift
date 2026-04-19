@@ -50,17 +50,9 @@ struct SignInView: View {
                     }
                     .disabled(pastedToken.isEmpty || verifyingToken)
                 } header: {
-                    Text("Or paste a token")
+                    Text(AppEnvironment.current.supportsUniversalLinks ? "Or paste a token" : "Paste verify token")
                 } footer: {
-                    // handoff §4: Universal Links require an AASA file on
-                    // the monolith that hasn't shipped yet. Until it does,
-                    // users open the verify link in Safari, copy the token
-                    // shown on the HTML page, and paste it here.
-                    Text(
-                        "Open the magic-link email on another device, tap the link in Safari, "
-                        + "copy the token shown there, and paste it above."
-                    )
-                    .foregroundStyle(.secondary)
+                    Text(pasteFooterCopy).foregroundStyle(.secondary)
                 }
 
                 if let errorMessage {
@@ -68,6 +60,21 @@ struct SignInView: View {
                 }
             }
             .navigationTitle("Harvest")
+        }
+    }
+
+    private var pasteFooterCopy: String {
+        if AppEnvironment.current.supportsUniversalLinks {
+            // Universal Links path: AASA file on harvest.bitrat.io isn't
+            // shipped yet, so the fallback is opening the link in another
+            // Safari (phone, iPad, or desktop), copying the token from the
+            // HTML verify page, and pasting here.
+            return "Open the magic-link email in Safari, copy the token shown on the page, and paste it above."
+        } else {
+            // Dev path: harvest.bitrat.test is not publicly resolvable, so
+            // iOS can never resolve the verify link — the desktop-browser
+            // flow is the only way to land a session token here.
+            return "Open the email on your desktop, open the verify link in a browser on the machine running harvest.bitrat.test, then copy the token shown on the page and paste it above."
         }
     }
 

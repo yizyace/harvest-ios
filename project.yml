@@ -8,25 +8,21 @@ options:
   groupSortPosition: top
   generateEmptyDirectories: true
 
-settings:
-  base:
-    DEVELOPMENT_TEAM: 37A42LB22L
-    SWIFT_VERSION: "5.10"
-    ENABLE_USER_SCRIPT_SANDBOXING: YES
-    CODE_SIGN_STYLE: Automatic
-  configs:
-    Debug:
-      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
-    Release:
-      SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
-
+# Four configurations so the prod and dev builds coexist. Debug + Release back
+# the `Harvest` scheme; Debug-Dev + Release-Dev back the `Harvest Dev` scheme.
+# All base on Shared.xcconfig (compiler flags use [config=Debug*]/[config=Release*]
+# wildcards so flags track debug/release regardless of env).
 configs:
   Debug: debug
   Release: release
+  Debug-Dev: debug
+  Release-Dev: release
 
 configFiles:
-  Debug: Config/Debug.xcconfig
-  Release: Config/Release.xcconfig
+  Debug: Config/Prod.xcconfig
+  Release: Config/Prod.xcconfig
+  Debug-Dev: Config/Dev.xcconfig
+  Release-Dev: Config/Dev.xcconfig
 
 targets:
   Harvest:
@@ -34,13 +30,10 @@ targets:
     platform: iOS
     sources:
       - path: Harvest
-    configFiles:
-      Debug: Config/Debug.xcconfig
-      Release: Config/Release.xcconfig
     info:
       path: Harvest/Info.plist
       properties:
-        CFBundleDisplayName: Harvest
+        CFBundleDisplayName: $(HARVEST_DISPLAY_NAME)
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
         UILaunchScreen:
@@ -53,20 +46,13 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIRequiredDeviceCapabilities:
           - arm64
-        API_BASE_URL: $(API_BASE_URL)
-    entitlements:
-      path: Harvest/Harvest.entitlements
-      properties:
-        com.apple.developer.associated-domains:
-          - applinks:harvest.bitrat.io
-        keychain-access-groups:
-          - $(AppIdentifierPrefix)io.bitrat.harvest
-        com.apple.security.application-groups:
-          - group.io.bitrat.harvest
+        HarvestBaseURL: $(HARVEST_BASE_URL)
+        HarvestSupportsUniversalLinks: $(HARVEST_SUPPORTS_UNIVERSAL_LINKS)
+        HarvestKeychainGroup: $(AppIdentifierPrefix)$(HARVEST_BUNDLE_ID)
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.bitrat.harvest
-        TARGETED_DEVICE_FAMILY: "1,2"
+        PRODUCT_BUNDLE_IDENTIFIER: $(HARVEST_BUNDLE_ID)
+        CODE_SIGN_ENTITLEMENTS: $(HARVEST_MAIN_ENTITLEMENTS)
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -94,13 +80,10 @@ targets:
       - path: Harvest/Core/API/HarvestAPI.swift
       - path: Harvest/Core/API/ISO8601.swift
       - path: Harvest/Core/Environment.swift
-    configFiles:
-      Debug: Config/Debug.xcconfig
-      Release: Config/Release.xcconfig
     info:
       path: ShareExtension/Info.plist
       properties:
-        CFBundleDisplayName: Harvest
+        CFBundleDisplayName: $(HARVEST_DISPLAY_NAME)
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
         NSExtension:
@@ -110,18 +93,13 @@ targets:
             NSExtensionActivationRule:
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
               NSExtensionActivationSupportsWebPageWithMaxCount: 1
-        API_BASE_URL: $(API_BASE_URL)
-    entitlements:
-      path: ShareExtension/ShareExtension.entitlements
-      properties:
-        keychain-access-groups:
-          - $(AppIdentifierPrefix)io.bitrat.harvest
-        com.apple.security.application-groups:
-          - group.io.bitrat.harvest
+        HarvestBaseURL: $(HARVEST_BASE_URL)
+        HarvestSupportsUniversalLinks: $(HARVEST_SUPPORTS_UNIVERSAL_LINKS)
+        HarvestKeychainGroup: $(AppIdentifierPrefix)$(HARVEST_BUNDLE_ID)
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: io.bitrat.harvest.ShareExtension
-        TARGETED_DEVICE_FAMILY: "1,2"
+        PRODUCT_BUNDLE_IDENTIFIER: $(HARVEST_BUNDLE_ID).ShareExtension
+        CODE_SIGN_ENTITLEMENTS: $(HARVEST_SHARE_ENTITLEMENTS)
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
 
@@ -130,9 +108,6 @@ targets:
     platform: iOS
     sources:
       - path: HarvestTests
-    configFiles:
-      Debug: Config/Debug.xcconfig
-      Release: Config/Release.xcconfig
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
@@ -155,3 +130,17 @@ schemes:
         - HarvestTests
     archive:
       config: Release
+
+  Harvest Dev:
+    build:
+      targets:
+        Harvest: all
+        ShareExtension: all
+    run:
+      config: Debug-Dev
+    test:
+      config: Debug-Dev
+      targets:
+        - HarvestTests
+    archive:
+      config: Release-Dev

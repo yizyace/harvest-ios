@@ -5,12 +5,25 @@ import Security
 // Share Extension (both targets declare the same keychain-access-groups
 // entitlement), which lets the extension POST bookmarks using the same
 // session token the main app acquired during sign-in.
+//
+// Access group name is sourced from Info.plist (`HarvestKeychainGroup`),
+// populated at build time from the per-env xcconfig. Prod builds use
+// io.bitrat.harvest; dev builds use io.bitrat.harvest.dev — so the two
+// installs can live side by side with independent session tokens.
 struct KeychainSessionPersistence: SessionPersistence {
 
-    private let service = "io.bitrat.harvest"
-    private let accessGroup = "37A42LB22L.io.bitrat.harvest"
+    private let service: String
+    private let accessGroup: String
     private let tokenAccount = "session_token"
     private let userAccount = "session_user"
+
+    init(
+        service: String = AppEnvironment.current.keychainAccessGroup,
+        accessGroup: String = AppEnvironment.current.keychainAccessGroup
+    ) {
+        self.service = service
+        self.accessGroup = accessGroup
+    }
 
     func readToken() -> String? {
         guard let data = read(account: tokenAccount) else { return nil }

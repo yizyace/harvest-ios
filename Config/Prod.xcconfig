@@ -1,0 +1,13 @@
+// Production build settings. Bound to the Debug + Release configurations,
+// which back the `Harvest` scheme. The simulator can reach harvest.bitrat.io
+// (public HTTPS), so this is what devs actually use day-to-day unless they
+// switch to `Harvest Dev`.
+
+#include "Shared.xcconfig"
+
+HARVEST_BUNDLE_ID = io.bitrat.harvest
+HARVEST_DISPLAY_NAME = Harvest
+HARVEST_BASE_URL = https:/$()/harvest.bitrat.io
+HARVEST_SUPPORTS_UNIVERSAL_LINKS = YES
+HARVEST_MAIN_ENTITLEMENTS = Harvest/Harvest.entitlements
+HARVEST_SHARE_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements

@@ -1,18 +1,46 @@
 import Foundation
 
-// Reads the API base URL from the Info.plist (populated from the per-config
-// xcconfig at build time). Defaults to the production URL if the key is
-// missing so we never ship a broken build.
-enum AppEnvironment {
-    static var apiBaseURL: URL {
-        let fallback = URL(string: "https://harvest.bitrat.io")!
-        guard
-            let raw = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String,
-            !raw.isEmpty,
-            let url = URL(string: raw)
-        else {
-            return fallback
+// Env-specific values baked into the Info.plist at build time via xcconfig
+// (HARVEST_BASE_URL, HARVEST_SUPPORTS_UNIVERSAL_LINKS, HARVEST_BUNDLE_ID).
+// Consumers should route through this type instead of reading Info.plist
+// directly or branching on `#if DEBUG` — the handoff explicitly calls out
+// "no #if DEBUG branches" as an acceptance criterion.
+struct AppEnvironment: Sendable {
+
+    let baseURL: URL
+    let supportsUniversalLinks: Bool
+    let keychainAccessGroup: String
+
+    static let current: AppEnvironment = {
+        let bundle = Bundle.main
+        return AppEnvironment(
+            baseURL: readURL(bundle: bundle, key: "HarvestBaseURL")
+                ?? URL(string: "https://harvest.bitrat.io")!,
+            supportsUniversalLinks: readBool(bundle: bundle, key: "HarvestSupportsUniversalLinks"),
+            keychainAccessGroup: readString(bundle: bundle, key: "HarvestKeychainGroup")
+                ?? "io.bitrat.harvest"
+        )
+    }()
+
+    private static func readString(bundle: Bundle, key: String) -> String? {
+        guard let value = bundle.object(forInfoDictionaryKey: key) as? String, !value.isEmpty else {
+            return nil
         }
-        return url
+        return value
+    }
+
+    private static func readURL(bundle: Bundle, key: String) -> URL? {
+        readString(bundle: bundle, key: key).flatMap(URL.init(string:))
+    }
+
+    private static func readBool(bundle: Bundle, key: String) -> Bool {
+        // Info.plist stores xcconfig-sourced booleans as the literal strings
+        // "YES"/"NO" because xcconfig has no bool type. Accept either that or
+        // an actual bool (Xcode may coerce for generated plists).
+        if let bool = bundle.object(forInfoDictionaryKey: key) as? Bool { return bool }
+        if let string = readString(bundle: bundle, key: key) {
+            return string.uppercased() == "YES" || string == "1" || string.lowercased() == "true"
+        }
+        return false
     }
 }

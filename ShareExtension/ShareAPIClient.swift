@@ -10,7 +10,7 @@ struct ShareAPIClient {
 
     init(persistence: SessionPersistence) {
         self.api = HarvestAPI(
-            baseURL: AppEnvironment.apiBaseURL,
+            baseURL: AppEnvironment.current.baseURL,
             urlSession: .shared,
             tokenProvider: { persistence.readToken() }
         )

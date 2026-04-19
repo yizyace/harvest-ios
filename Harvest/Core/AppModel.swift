@@ -23,7 +23,7 @@ final class AppModel {
         // SessionStore token on every request, so sign-out propagates to
         // subsequent requests without rebuilding the API client.
         let api = HarvestAPI(
-            baseURL: AppEnvironment.apiBaseURL,
+            baseURL: AppEnvironment.current.baseURL,
             urlSession: .shared,
             tokenProvider: { [store] in store.token }
         )
