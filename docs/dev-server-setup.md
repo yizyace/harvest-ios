@@ -148,6 +148,45 @@ using, otherwise the installed cert won't match what the server serves.
 This is the normal state before CA install. Mac and sim have separate
 trust stores. Installing the CA in the sim fixes it.
 
+**CA install succeeded but Safari still says "connection not private."**
+
+Almost certainly **not** a CA-trust problem — the CA install works. Most
+likely culprit: the leaf cert dd-ferryman is serving has a validity
+period >398 days, which iOS 13+ rejects for any cert issued under a
+user-installed root CA
+([Apple HT211025](https://support.apple.com/en-us/HT211025)).
+
+Diagnose. First stream the sim's trust log while loading the URL:
+
+```sh
+xcrun simctl spawn booted log stream --style compact \
+  --predicate 'subsystem == "com.apple.securityd" AND eventMessage CONTAINS[c] "trust"' &
+xcrun simctl openurl booted https://harvest.bitrat.test/
+```
+
+If you see `Trust evaluate failure: [leaf OtherTrustValidityPeriod]`,
+that's the 398-day rule. Confirm the leaf's validity period:
+
+```sh
+DATES=$(openssl s_client -showcerts -servername harvest.bitrat.test \
+  -connect harvest.bitrat.test:443 </dev/null 2>/dev/null \
+  | openssl x509 -noout -dates)
+echo "$DATES"
+```
+
+Calculate `notAfter - notBefore` in days. Anything >398 fails under
+user-installed-root rules.
+
+**Fix: server-side only.** Reconfigure dd-ferryman (or whatever tool
+issues leaf certs on the Rails side) to issue leaf certs with a ≤398-day
+validity. 397 is safer — some iOS versions have counted bounds
+inclusively. After the reissue, the sim doesn't need any changes (root
+didn't change); just restart the dev server.
+
+No iOS-side workaround exists for this short of disabling cert trust in
+code, which we ruled out. Do not disable cert trust to work around a
+server-side config issue.
+
 **"Invalid CA certificate" when running `add-root-cert`.**
 
 The file at `~/.dd-ferryman/ca/ca.crt` isn't a valid X.509 cert (maybe
