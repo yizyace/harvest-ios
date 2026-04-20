@@ -26,6 +26,19 @@
 	<string>$(AppIdentifierPrefix)$(HARVEST_BUNDLE_ID)</string>
 	<key>HarvestSupportsUniversalLinks</key>
 	<string>$(HARVEST_SUPPORTS_UNIVERSAL_LINKS)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>harvest.bitrat.test</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -49,6 +49,16 @@ targets:
         HarvestBaseURL: $(HARVEST_BASE_URL)
         HarvestSupportsUniversalLinks: $(HARVEST_SUPPORTS_UNIVERSAL_LINKS)
         HarvestKeychainGroup: $(AppIdentifierPrefix)$(HARVEST_BUNDLE_ID)
+        # ATS exception for the dev server's self-signed / local-CA cert.
+        # Scoped to harvest.bitrat.test only — .test is an RFC 6761 reserved
+        # TLD for local-development use, so no public CA will ever issue a
+        # cert for it and this exception cannot weaken trust for any
+        # production hostname. Prod builds never hit this domain.
+        NSAppTransportSecurity:
+          NSExceptionDomains:
+            harvest.bitrat.test:
+              NSExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(HARVEST_BUNDLE_ID)
@@ -96,6 +106,14 @@ targets:
         HarvestBaseURL: $(HARVEST_BASE_URL)
         HarvestSupportsUniversalLinks: $(HARVEST_SUPPORTS_UNIVERSAL_LINKS)
         HarvestKeychainGroup: $(AppIdentifierPrefix)$(HARVEST_BUNDLE_ID)
+        # Share Extension needs the same ATS exception so dev-build saves
+        # from Safari's share sheet can reach harvest.bitrat.test. See the
+        # matching comment on the Harvest target.
+        NSAppTransportSecurity:
+          NSExceptionDomains:
+            harvest.bitrat.test:
+              NSExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(HARVEST_BUNDLE_ID).ShareExtension
