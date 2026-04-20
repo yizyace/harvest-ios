@@ -1,11 +1,13 @@
 name: CI
 
 on:
-  # Only run when something lands on main. The expensive macOS runner is a
-  # safety net after the local pre-push hook, not a per-branch gate. See
-  # .githooks/pre-push for the local xcodebuild test run.
+  # Public repos get free macOS minutes, so we run CI on every PR and on
+  # every push to main. pull_request gates branch work before merge;
+  # push-to-main catches post-merge regressions. Other branch pushes
+  # skip CI — they'll get it when they open a PR.
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 concurrency:
