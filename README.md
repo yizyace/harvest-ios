@@ -58,24 +58,55 @@ still points at CommandLineTools. To make it permanent:
 
 ### Bundle ID + signing
 
-- Bundle ID: `io.bitrat.harvest`
-- Share Extension bundle ID: `io.bitrat.harvest.ShareExtension`
+Per-env: prod uses `io.bitrat.harvest`, dev uses `io.bitrat.harvest.dev`.
+The Share Extension appends `.ShareExtension` to whichever is active. The
+keychain access group and app group track the main Bundle ID, so the two
+builds have independent session storage.
+
 - Development Team: `37A42LB22L`
-- Shared keychain access group: `$(AppIdentifierPrefix)io.bitrat.harvest`
-- App Group: `group.io.bitrat.harvest`
-- Associated Domains: `applinks:harvest.bitrat.io`
+- Associated Domains (prod only): `applinks:harvest.bitrat.io` — dev has
+  no `applinks` entitlement because `harvest.bitrat.test` isn't publicly
+  resolvable and iOS cannot fetch an AASA file for it.
 
 ### Environment / base URL
 
-Debug and Release both point at `https://harvest.bitrat.io`. The dev monolith
-at `harvest.bitrat.test` uses a local-only CA that the simulator won't trust,
-so routing debug builds at dev requires per-device CA setup. To override
-locally, create a gitignored `Config/Secrets.xcconfig` with
-`API_BASE_URL = https:/$()/your-host` and `#include "Secrets.xcconfig"` at the
-bottom of `Config/Debug.xcconfig`.
+Two schemes, two environments. Both install side by side on the same
+simulator/device — different bundle IDs, different display names, different
+keychains.
+
+| Scheme | Base URL | Bundle ID | Display name |
+|---|---|---|---|
+| `Harvest` | `https://harvest.bitrat.io` | `io.bitrat.harvest` | Harvest |
+| `Harvest Dev` | `https://harvest.bitrat.test` | `io.bitrat.harvest.dev` | Harvest Dev |
+
+The base URL comes from `HARVEST_BASE_URL` in the per-env xcconfig
+(`Config/Prod.xcconfig`, `Config/Dev.xcconfig`) and lands in the built
+`.app`'s Info.plist as `HarvestBaseURL`. `AppEnvironment.current.baseURL`
+reads it at launch. No `#if DEBUG` branches anywhere.
+
+The four build configurations (`Debug`, `Release`, `Debug-Dev`, `Release-Dev`)
+map to the two xcconfigs. Compiler flags live in `Config/Shared.xcconfig`
+with `[config=Debug*]`/`[config=Release*]` wildcards so they track
+debug/release regardless of env.
 
 (Note: xcconfig treats `//` as a comment, so URLs use `/$()/` to break up the
 double-slash.)
+
+#### Talking to the dev server
+
+The `Harvest Dev` build points at a Rails dev host served behind a local
+CA the simulator doesn't trust out of the box. One-time install per
+simulator:
+
+```sh
+xcrun simctl keychain booted add-root-cert "$HOME/.dd-ferryman/ca/ca.crt"
+```
+
+See [`docs/dev-server-setup.md`](docs/dev-server-setup.md) for why this
+is needed, what to do when the CA rotates, troubleshooting, and what
+alternatives we ruled out (ATS exceptions, programmatic trust
+delegates). Read that doc **before** proposing a new approach to cert
+trust — we've already been around the block.
 
 ## Why XcodeGen?
 
