@@ -65,18 +65,6 @@ extension APIError {
 // MARK: - User-facing message
 
 extension APIError {
-    // TODO(learning-mode): decide the UX here. Every call site funnels
-    // through this property to render errors — a banner, an inline label, a
-    // toast, or a sheet. The current implementation is a placeholder; the
-    // final mapping should decide:
-    //   • how verbose to be for `.validation` (join all FieldErrors? show
-    //     only the first? field-specific inline errors?)
-    //   • whether `.transport` should include URLError.localizedDescription
-    //     or a generic "Can't reach Harvest" message
-    //   • wording for `.unauthorized` — this one is especially sensitive
-    //     because AppModel will have already signed the user out by the
-    //     time the UI renders it, so it may be preferable to swallow
-    //     entirely and rely on the sign-in screen transition.
     var userFacingMessage: String {
         switch self {
         case .unauthorized:
