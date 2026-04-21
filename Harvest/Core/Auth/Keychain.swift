@@ -12,16 +12,11 @@ import Security
 // installs can live side by side with independent session tokens.
 struct KeychainSessionPersistence: SessionPersistence {
 
-    private let service: String
     private let accessGroup: String
     private let tokenAccount = "session_token"
     private let userAccount = "session_user"
 
-    init(
-        service: String = AppEnvironment.current.keychainAccessGroup,
-        accessGroup: String = AppEnvironment.current.keychainAccessGroup
-    ) {
-        self.service = service
+    init(accessGroup: String = AppEnvironment.current.keychainAccessGroup) {
         self.accessGroup = accessGroup
     }
 
@@ -56,7 +51,7 @@ struct KeychainSessionPersistence: SessionPersistence {
     private func baseQuery(account: String) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
+            kSecAttrService as String: accessGroup,
             kSecAttrAccount as String: account,
             kSecAttrAccessGroup as String: accessGroup
         ]
