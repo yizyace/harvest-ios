@@ -273,6 +273,37 @@ final class HarvestAPITests: XCTestCase {
         }
     }
 
+    // MARK: DELETE /api/v1/users/me — account deletion
+
+    func testDeleteAccountTolerates204EmptyBody() async throws {
+        URLProtocolStub.enqueue(
+            .init(statusCode: 204, body: Data()),
+            for: Endpoint.currentUser(base: base)
+        )
+
+        try await makeAPI().deleteAccount()
+
+        let recorded = try XCTUnwrap(URLProtocolStub.allRecorded.first)
+        XCTAssertEqual(recorded.method, "DELETE")
+        XCTAssertEqual(recorded.headers["Authorization"], "Bearer test-token")
+    }
+
+    func testDeleteAccountRaisesUnauthorizedOn401() async {
+        URLProtocolStub.enqueue(
+            .init(statusCode: 401, body: #"{"error":"Not authenticated"}"#.data(using: .utf8)!),
+            for: Endpoint.currentUser(base: base)
+        )
+
+        do {
+            try await makeAPI().deleteAccount()
+            XCTFail("expected unauthorized")
+        } catch let error as APIError {
+            XCTAssertEqual(error, .unauthorized)
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+    }
+
     // MARK: 401 on any API endpoint
 
     func testListReturns401AsUnauthorizedSoAppModelCanSignOut() async {

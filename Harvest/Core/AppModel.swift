@@ -51,6 +51,22 @@ final class AppModel {
         sessionStore.clear()
     }
 
+    /// Deletes the account server-side and clears the local session. Only
+    /// clears Keychain on a confirmed 204 (or 401 — token already dead from
+    /// a prior attempt). Other errors re-throw so the UI can offer retry —
+    /// clearing prematurely would leave the user signed out locally while
+    /// their account still exists server-side.
+    func deleteAccount() async throws {
+        do {
+            try await api.deleteAccount()
+        } catch APIError.unauthorized {
+            // Token already invalidated (e.g., prior attempt succeeded
+            // server-side but this client didn't see the 204). Same
+            // cleanup as success.
+        }
+        sessionStore.clear()
+    }
+
     /// Call once on app launch. If the stored token is already expired or
     /// revoked server-side, clears the session before the first user action
     /// can paper over the signed-out state.
