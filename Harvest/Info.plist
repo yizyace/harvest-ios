@@ -26,6 +26,8 @@
 	<string>$(AppIdentifierPrefix)$(HARVEST_BUNDLE_ID)</string>
 	<key>HarvestSupportsUniversalLinks</key>
 	<string>$(HARVEST_SUPPORTS_UNIVERSAL_LINKS)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
