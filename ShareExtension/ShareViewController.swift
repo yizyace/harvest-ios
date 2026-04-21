@@ -212,7 +212,7 @@ final class ShareViewController: UIViewController {
         if success {
             extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
         } else {
-            let error = NSError(domain: "ShareExtension", code: success ? 0 : -1)
+            let error = NSError(domain: "ShareExtension", code: -1)
             extensionContext?.cancelRequest(withError: error)
         }
     }
