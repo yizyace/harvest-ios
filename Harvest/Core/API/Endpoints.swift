@@ -29,6 +29,10 @@ enum Endpoint {
         base.appendingPathComponent("auth/sign_out")
     }
 
+    static func currentUser(base: URL) -> URL {
+        base.appendingPathComponent("api/v1/users/me")
+    }
+
     static func bookmarks(base: URL) -> URL {
         base.appendingPathComponent("api/v1/bookmarks")
     }

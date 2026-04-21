@@ -74,6 +74,27 @@ struct HarvestAPI: Sendable {
         )
     }
 
+    /// Deletes the signed-in user + all their bookmarks/sessions/tags
+    /// server-side. Returns 204 with an empty body; the bearer token is
+    /// invalidated along with the session, so subsequent authenticated
+    /// calls will 401. Callers should treat 401 here as success — the
+    /// token was already dead from a prior attempt.
+    func deleteAccount() async throws {
+        let (data, response) = try await fetch(
+            request: makeRequest(
+                url: Endpoint.currentUser(base: baseURL),
+                method: "DELETE",
+                jsonBody: Optional<String>.none,
+                authenticated: true
+            )
+        )
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.decoding("Expected HTTPURLResponse on DELETE")
+        }
+        if http.statusCode == 204 { return }
+        throw APIError.from(statusCode: http.statusCode, data: data)
+    }
+
     // MARK: Bookmarks
 
     func listBookmarks(
