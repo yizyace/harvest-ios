@@ -9,8 +9,13 @@
 DEVELOPMENT_TEAM = 37A42LB22L
 SWIFT_VERSION = 5.10
 ENABLE_USER_SCRIPT_SANDBOXING = YES
-CODE_SIGN_STYLE = Automatic
 TARGETED_DEVICE_FAMILY = 1,2
+
+// Debug = automatic signing (local cmd-R stays zero-friction).
+// Release = manual signing driven by fastlane match — reproducible
+// archives in CI, no keychain login prompts.
+CODE_SIGN_STYLE[config=Debug*] = Automatic
+CODE_SIGN_STYLE[config=Release*] = Manual
 
 SWIFT_OPTIMIZATION_LEVEL[config=Debug*] = -Onone
 SWIFT_OPTIMIZATION_LEVEL[config=Release*] = -O
