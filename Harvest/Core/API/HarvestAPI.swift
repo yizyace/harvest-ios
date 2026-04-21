@@ -78,12 +78,13 @@ struct HarvestAPI: Sendable {
 
     func listBookmarks(
         filters: BookmarkFilters = .none,
-        page: Int = 1,
-        perPage: Int = 25
+        limit: Int = 25,
+        after: String? = nil,
+        before: String? = nil
     ) async throws -> BookmarkList {
         try await perform(
             request: makeRequest(
-                url: Endpoint.bookmarksList(base: baseURL, filters: filters, page: page, perPage: perPage),
+                url: Endpoint.bookmarksList(base: baseURL, filters: filters, limit: limit, after: after, before: before),
                 method: "GET",
                 jsonBody: Optional<String>.none,
                 authenticated: true

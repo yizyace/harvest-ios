@@ -5,6 +5,7 @@ import Foundation
 enum APIError: Error, Equatable {
     case unauthorized                              // 401
     case notFound(String?)                         // 404 — optional server-provided message
+    case invalidCursor                             // 400 {"error": "Invalid cursor"} — stale or malformed
     case validation([FieldError])                  // 422 — {"errors": [{field, message}]}
     case simple(String)                            // {"error": "..."} envelope
     case transport(URLError)                       // underlying network failure
@@ -32,6 +33,14 @@ extension APIError {
         let body = String(data: data, encoding: .utf8)
 
         switch statusCode {
+        case 400:
+            if envelope?.error == "Invalid cursor" {
+                return .invalidCursor
+            }
+            if let message = envelope?.error {
+                return .simple(message)
+            }
+            return .unexpectedStatus(code: 400, body: body)
         case 401:
             return .unauthorized
         case 404:
@@ -74,6 +83,8 @@ extension APIError {
             return "Your session expired. Please sign in again."
         case .notFound(let message):
             return message ?? "Not found."
+        case .invalidCursor:
+            return "Refreshing…"
         case .validation(let errors):
             return errors.first.map { "\($0.field): \($0.message)" } ?? "Validation failed."
         case .simple(let message):

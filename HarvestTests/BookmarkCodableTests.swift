@@ -24,7 +24,11 @@ final class BookmarkCodableTests: XCTestCase {
               "updated_at": "2026-04-17T12:00:00Z"
             }
           ],
-          "meta": { "page": 1, "per_page": 25, "total": 42 }
+          "meta": {
+            "limit": 25,
+            "next_cursor": "eyJjIjoiMjAyNi0wNC0yMFQxMzowMjo1MS4xMjM0NTZaIiwiaSI6Ii4uLiJ9",
+            "has_more": true
+          }
         }
         """.data(using: .utf8)!
 
@@ -37,9 +41,20 @@ final class BookmarkCodableTests: XCTestCase {
         XCTAssertEqual(list.bookmarks[0].readingTimeMinutes, 5)
         XCTAssertNil(list.bookmarks[0].tags, "list shape must not include tags")
         XCTAssertNil(list.bookmarks[0].cachedContent, "list shape must not include cached_content")
-        XCTAssertEqual(list.meta.page, 1)
-        XCTAssertEqual(list.meta.perPage, 25)
-        XCTAssertEqual(list.meta.total, 42)
+        XCTAssertEqual(list.meta.limit, 25)
+        XCTAssertEqual(list.meta.nextCursor, "eyJjIjoiMjAyNi0wNC0yMFQxMzowMjo1MS4xMjM0NTZaIiwiaSI6Ii4uLiJ9")
+        XCTAssertTrue(list.meta.hasMore)
+    }
+
+    func testDecodesLastPageWithNullNextCursor() throws {
+        let json = """
+        { "bookmarks": [], "meta": { "limit": 25, "next_cursor": null, "has_more": false } }
+        """.data(using: .utf8)!
+
+        let list = try decoder.decode(BookmarkList.self, from: json)
+
+        XCTAssertNil(list.meta.nextCursor)
+        XCTAssertFalse(list.meta.hasMore)
     }
 
     // MARK: GET /api/v1/bookmarks/:id

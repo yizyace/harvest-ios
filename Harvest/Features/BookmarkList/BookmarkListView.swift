@@ -66,6 +66,15 @@ struct BookmarkListView: View {
                     description: Text("Save a URL from Safari's share sheet to see it here.")
                 )
                 .listRowSeparator(.hidden)
+            case .idle where model.hasMore:
+                Button {
+                    Task { await model.loadMore() }
+                } label: {
+                    Text("Load more")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .listRowSeparator(.hidden)
             default:
                 EmptyView()
             }

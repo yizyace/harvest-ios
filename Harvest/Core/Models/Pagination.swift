@@ -1,9 +1,9 @@
 import Foundation
 
 struct PaginationMeta: Codable, Equatable, Sendable {
-    let page: Int
-    let perPage: Int
-    let total: Int
+    let limit: Int
+    let nextCursor: String?
+    let hasMore: Bool
 }
 
 struct BookmarkList: Codable, Equatable, Sendable {

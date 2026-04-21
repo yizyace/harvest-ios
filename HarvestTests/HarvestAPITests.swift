@@ -88,14 +88,14 @@ final class HarvestAPITests: XCTestCase {
     // MARK: GET /api/v1/bookmarks — bearer token
 
     func testListBookmarksAttachesBearerTokenAndParsesResponse() async throws {
-        let url = Endpoint.bookmarksList(base: base, filters: .none, page: 1, perPage: 25)
+        let url = Endpoint.bookmarksList(base: base, filters: .none, limit: 25)
         URLProtocolStub.enqueue(
             .init(
                 statusCode: 200,
                 body: #"""
                 {
                   "bookmarks": [],
-                  "meta": {"page":1,"per_page":25,"total":0}
+                  "meta": {"limit":25,"next_cursor":null,"has_more":false}
                 }
                 """#.data(using: .utf8)!
             ),
@@ -104,28 +104,30 @@ final class HarvestAPITests: XCTestCase {
 
         let list = try await makeAPI().listBookmarks()
 
-        XCTAssertEqual(list.meta.total, 0)
+        XCTAssertEqual(list.meta.limit, 25)
+        XCTAssertFalse(list.meta.hasMore)
+        XCTAssertNil(list.meta.nextCursor)
 
         let recorded = try XCTUnwrap(URLProtocolStub.allRecorded.first)
         XCTAssertEqual(recorded.headers["Authorization"], "Bearer test-token")
     }
 
-    func testListFiltersSerializeAsQueryParams() async throws {
+    func testListFiltersAndCursorSerializeAsQueryParams() async throws {
         let filters = BookmarkFilters(
             processingStatus: .ready,
             readingStatus: .unread,
             tag: "ruby"
         )
-        let url = Endpoint.bookmarksList(base: base, filters: filters, page: 3, perPage: 50)
+        let url = Endpoint.bookmarksList(base: base, filters: filters, limit: 50, after: "cursor-123")
         URLProtocolStub.enqueue(
             .init(
                 statusCode: 200,
-                body: #"{"bookmarks":[],"meta":{"page":3,"per_page":50,"total":0}}"#.data(using: .utf8)!
+                body: #"{"bookmarks":[],"meta":{"limit":50,"next_cursor":null,"has_more":false}}"#.data(using: .utf8)!
             ),
             for: url
         )
 
-        _ = try await makeAPI().listBookmarks(filters: filters, page: 3, perPage: 50)
+        _ = try await makeAPI().listBookmarks(filters: filters, limit: 50, after: "cursor-123")
 
         let recorded = try XCTUnwrap(URLProtocolStub.allRecorded.first)
         let query = URLComponents(url: recorded.url, resolvingAgainstBaseURL: false)?.queryItems ?? []
@@ -133,8 +135,26 @@ final class HarvestAPITests: XCTestCase {
         XCTAssertEqual(dict["processing_status"], "ready")
         XCTAssertEqual(dict["reading_status"], "unread")
         XCTAssertEqual(dict["tag"], "ruby")
-        XCTAssertEqual(dict["page"], "3")
-        XCTAssertEqual(dict["per_page"], "50")
+        XCTAssertEqual(dict["limit"], "50")
+        XCTAssertEqual(dict["after"], "cursor-123")
+        XCTAssertNil(dict["before"])
+    }
+
+    func testListMapsInvalidCursorToTypedError() async {
+        let url = Endpoint.bookmarksList(base: base, filters: .none, limit: 25, after: "stale")
+        URLProtocolStub.enqueue(
+            .init(statusCode: 400, body: #"{"error":"Invalid cursor"}"#.data(using: .utf8)!),
+            for: url
+        )
+
+        do {
+            _ = try await makeAPI().listBookmarks(after: "stale")
+            XCTFail("expected invalidCursor")
+        } catch let error as APIError {
+            XCTAssertEqual(error, .invalidCursor)
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
     }
 
     // MARK: POST /api/v1/bookmarks — 202 Accepted
@@ -258,7 +278,7 @@ final class HarvestAPITests: XCTestCase {
     func testListReturns401AsUnauthorizedSoAppModelCanSignOut() async {
         URLProtocolStub.enqueue(
             .init(statusCode: 401, body: #"{"error":"Not authenticated"}"#.data(using: .utf8)!),
-            for: Endpoint.bookmarksList(base: base, filters: .none, page: 1, perPage: 25)
+            for: Endpoint.bookmarksList(base: base, filters: .none, limit: 25)
         )
 
         do {

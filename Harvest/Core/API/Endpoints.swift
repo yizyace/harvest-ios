@@ -40,14 +40,14 @@ enum Endpoint {
     static func bookmarksList(
         base: URL,
         filters: BookmarkFilters,
-        page: Int,
-        perPage: Int
+        limit: Int,
+        after: String? = nil,
+        before: String? = nil
     ) -> URL {
         var components = URLComponents(url: bookmarks(base: base), resolvingAgainstBaseURL: false)!
-        var items: [URLQueryItem] = [
-            URLQueryItem(name: "page", value: String(page)),
-            URLQueryItem(name: "per_page", value: String(perPage))
-        ]
+        var items: [URLQueryItem] = [URLQueryItem(name: "limit", value: String(limit))]
+        if let after { items.append(URLQueryItem(name: "after", value: after)) }
+        if let before { items.append(URLQueryItem(name: "before", value: before)) }
         if let status = filters.processingStatus {
             items.append(URLQueryItem(name: "processing_status", value: status.rawValue))
         }
