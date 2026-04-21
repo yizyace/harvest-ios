@@ -46,6 +46,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIRequiredDeviceCapabilities:
           - arm64
+        ITSAppUsesNonExemptEncryption: false
         HarvestBaseURL: $(HARVEST_BASE_URL)
         HarvestSupportsUniversalLinks: $(HARVEST_SUPPORTS_UNIVERSAL_LINKS)
         HarvestKeychainGroup: $(AppIdentifierPrefix)$(HARVEST_BUNDLE_ID)
@@ -93,6 +94,7 @@ targets:
             NSExtensionActivationRule:
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
               NSExtensionActivationSupportsWebPageWithMaxCount: 1
+        ITSAppUsesNonExemptEncryption: false
         HarvestBaseURL: $(HARVEST_BASE_URL)
         HarvestSupportsUniversalLinks: $(HARVEST_SUPPORTS_UNIVERSAL_LINKS)
         HarvestKeychainGroup: $(AppIdentifierPrefix)$(HARVEST_BUNDLE_ID)
