@@ -65,14 +65,6 @@ final class ShareViewController: UIViewController {
             showSpinner: true
         )
 
-        // TODO(learning-mode): dismiss-on-202 vs. wait-for-ready. Current
-        // implementation dismisses as soon as POST returns 202 ("we've
-        // enqueued the article"), which is fast but doesn't confirm
-        // extraction. Waiting for processing_status == ready means polling
-        // GET /api/v1/bookmarks/:id — cheap on a fast site, slow on a
-        // minute-long extraction. The handoff notes extraction "budgets
-        // minutes on slow sites" so polling blocking the extension UI is
-        // probably a bad default.
         do {
             _ = try await client.createBookmark(url: url)
             show(
