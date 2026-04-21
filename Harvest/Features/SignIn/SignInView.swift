@@ -9,6 +9,7 @@ struct SignInView: View {
     @State private var verifyingToken = false
     @State private var sentMessage: String?
     @State private var errorMessage: String?
+    @State private var showPrivacySheet = false
 
     var body: some View {
         NavigationStack {
@@ -58,8 +59,23 @@ struct SignInView: View {
                 if let errorMessage {
                     Section { Text(errorMessage).foregroundStyle(.red) }
                 }
+
+                Section {
+                    Button {
+                        showPrivacySheet = true
+                    } label: {
+                        Text("Privacy Policy")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .listRowBackground(Color.clear)
             }
             .navigationTitle("Harvest")
+            .sheet(isPresented: $showPrivacySheet) {
+                SafariWebView(url: SettingsView.privacyURL)
+                    .ignoresSafeArea()
+            }
         }
     }
 

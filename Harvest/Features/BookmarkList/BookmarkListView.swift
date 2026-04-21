@@ -14,6 +14,9 @@ struct BookmarkListView: View {
                         Menu {
                             filterMenu
                             Divider()
+                            NavigationLink("Settings") {
+                                SettingsView()
+                            }
                             Button("Sign out", role: .destructive) {
                                 Task { await appModel.signOut() }
                             }
