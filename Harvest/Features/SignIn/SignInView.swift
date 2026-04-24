@@ -56,8 +56,8 @@ struct SignInView: View {
                     Text(pasteFooterCopy).foregroundStyle(.secondary)
                 }
 
-                if let errorMessage {
-                    Section { Text(errorMessage).foregroundStyle(.red) }
+                if let displayedError {
+                    Section { Text(displayedError).foregroundStyle(.red) }
                 }
 
                 Section {
@@ -77,6 +77,14 @@ struct SignInView: View {
                     .ignoresSafeArea()
             }
         }
+    }
+
+    // Local action errors win over background URL-tap errors so the most
+    // recent user action always gets visible feedback. Falls back to
+    // AppModel.lastError, which is set when a Universal Link arrives with
+    // an invalid/used/expired token — that path never touches local state.
+    private var displayedError: String? {
+        errorMessage ?? appModel.lastError
     }
 
     private var pasteFooterCopy: String {
@@ -99,6 +107,7 @@ struct SignInView: View {
         guard !address.isEmpty else { return }
         sendingLink = true
         errorMessage = nil
+        appModel.lastError = nil
         Task {
             defer { sendingLink = false }
             do {
@@ -115,6 +124,7 @@ struct SignInView: View {
         guard !token.isEmpty else { return }
         verifyingToken = true
         errorMessage = nil
+        appModel.lastError = nil
         Task {
             defer { verifyingToken = false }
             do {

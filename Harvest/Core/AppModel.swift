@@ -100,14 +100,23 @@ final class AppModel {
 
     // MARK: Incoming URLs (Universal Links + paste-token fallback)
 
-    /// Parses `https://harvest.bitrat.io/auth/verify?token=…` and completes
-    /// sign-in. Returns true if the URL was recognised.
+    /// Parses `https://<env-host>/auth/verify?token=…` and completes sign-in.
+    /// Returns true if the URL was recognised.
     @discardableResult
     func handleIncomingURL(_ url: URL) async -> Bool {
-        guard let token = UniversalLinks.verifyToken(from: url) else { return false }
+        guard
+            let host = AppEnvironment.current.baseURL.host,
+            let token = UniversalLinks.verifyToken(from: url, expectedHost: host)
+        else { return false }
         do {
             try await completeSignIn(withToken: token)
             return true
+        } catch APIError.unauthorized {
+            // Generic "session expired" copy is wrong here — the user never
+            // signed in. 401 on /verify means the magic link is stale
+            // (expired or already consumed), so ask for a fresh one.
+            lastError = "This sign-in link has expired or already been used. Request a new one."
+            return false
         } catch {
             lastError = (error as? APIError)?.userFacingMessage ?? "Sign-in failed."
             return false
