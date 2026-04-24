@@ -49,6 +49,9 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+fastlane/README.md
+fastlane/builds/
+fastlane/*.log
 
 # Code Injection
 iOSInjectionProject/
@@ -56,6 +59,7 @@ iOSInjectionProject/
 # Secrets — never commit API keys, signing creds, or local config
 *.pem
 *.p12
+*.p8
 *.mobileprovision
 *.cer
 .env

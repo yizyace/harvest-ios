@@ -35,13 +35,17 @@ targets:
       properties:
         CFBundleDisplayName: $(HARVEST_DISPLAY_NAME)
         CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        # CFBundleVersion is driven by CURRENT_PROJECT_VERSION (default 1
+        # for local Debug builds; fastlane injects the next TestFlight
+        # build number via xcargs for Release archives).
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen:
           UIColorName: AccentColor
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         UIRequiredDeviceCapabilities:
@@ -57,6 +61,14 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CURRENT_PROJECT_VERSION: 1
+      configs:
+        Release:
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "match AppStore io.bitrat.harvest"
+        Release-Dev:
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "match AppStore io.bitrat.harvest.dev"
     dependencies:
       - target: ShareExtension
 
@@ -86,7 +98,7 @@ targets:
       properties:
         CFBundleDisplayName: $(HARVEST_DISPLAY_NAME)
         CFBundleShortVersionString: "0.1.0"
-        CFBundleVersion: "1"
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
@@ -104,6 +116,14 @@ targets:
         CODE_SIGN_ENTITLEMENTS: $(HARVEST_SHARE_ENTITLEMENTS)
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
+        CURRENT_PROJECT_VERSION: 1
+      configs:
+        Release:
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "match AppStore io.bitrat.harvest.ShareExtension"
+        Release-Dev:
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "match AppStore io.bitrat.harvest.dev.ShareExtension"
 
   HarvestTests:
     type: bundle.unit-test

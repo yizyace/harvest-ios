@@ -1,0 +1,7 @@
+# git_url comes from env var so local dev and CI can use different auth
+# (SSH locally, HTTPS+PAT in CI via MATCH_GIT_BASIC_AUTHORIZATION).
+git_url(ENV.fetch("MATCH_GIT_URL"))
+storage_mode("git")
+type("appstore")
+app_identifier(["io.bitrat.harvest", "io.bitrat.harvest.ShareExtension"])
+team_id("37A42LB22L")

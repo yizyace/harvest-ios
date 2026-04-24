@@ -77,6 +77,12 @@ bottom of `Config/Debug.xcconfig`.
 (Note: xcconfig treats `//` as a comment, so URLs use `/$()/` to break up the
 double-slash.)
 
+## Shipping to TestFlight
+
+`bundle exec fastlane beta` archives Release and uploads to TestFlight, or click Run workflow on Actions → TestFlight in GitHub to do the same from CI. Full runbook including first-time setup (ASC app record, API key, match repo, GitHub secrets) lives in [`docs/release.md`](docs/release.md).
+
+Adding external (public) beta testers — self-contained runbook for a fresh agent in [`docs/testflight-external-testers.md`](docs/testflight-external-testers.md).
+
 ## Why XcodeGen?
 
 The generated `.xcodeproj/project.pbxproj` is a large, line-noise file that
