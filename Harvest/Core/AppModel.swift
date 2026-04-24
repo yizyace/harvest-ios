@@ -108,6 +108,12 @@ final class AppModel {
         do {
             try await completeSignIn(withToken: token)
             return true
+        } catch APIError.unauthorized {
+            // Generic "session expired" copy is wrong here — the user never
+            // signed in. 401 on /verify means the magic link is stale
+            // (expired or already consumed), so ask for a fresh one.
+            lastError = "This sign-in link has expired or already been used. Request a new one."
+            return false
         } catch {
             lastError = (error as? APIError)?.userFacingMessage ?? "Sign-in failed."
             return false
