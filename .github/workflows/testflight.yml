@@ -27,14 +27,14 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      # Pin Ruby 3.2 — 3.3 ships OpenSSL 3, which rejects ASC's EC key with
+      # "invalid curve name" in spaceship/connect_api/token.rb.
+      # See https://github.com/fastlane/fastlane/issues/20553.
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
+          ruby-version: "3.2"
           bundler-cache: true
 
-      # Fastlane's is_key_content_base64 path fails with OpenSSL 3
-      # "invalid curve name" on macos-latest. Materialize the .p8 instead
-      # and let the Fastfile use key_filepath (same path as local).
       - name: Materialize ASC API key
         env:
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
