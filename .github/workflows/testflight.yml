@@ -32,11 +32,21 @@ jobs:
           ruby-version: "3.3"
           bundler-cache: true
 
+      # Fastlane's is_key_content_base64 path fails with OpenSSL 3
+      # "invalid curve name" on macos-latest. Materialize the .p8 instead
+      # and let the Fastfile use key_filepath (same path as local).
+      - name: Materialize ASC API key
+        env:
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          mkdir -p "$HOME/.fastlane/harvest"
+          echo "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "$HOME/.fastlane/harvest/asc_api_key.p8"
+          chmod 600 "$HOME/.fastlane/harvest/asc_api_key.p8"
+
       - name: Upload to TestFlight
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
