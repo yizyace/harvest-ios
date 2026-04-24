@@ -48,7 +48,10 @@ All three are one-time setup. After this the loop is `fastlane beta` (local) or 
 
 ### 4. GitHub secrets (for CI uploads)
 
-Repo → **Settings → Secrets and variables → Actions → New repository secret**:
+Repo → **Settings → Environments → New environment** (name: `production`), then
+add each secret under that environment. The workflow declares
+`environment: production`; secrets stored as repo-level (not environment) will
+silently resolve to empty strings.
 
 | Secret | How to compute |
 |---|---|

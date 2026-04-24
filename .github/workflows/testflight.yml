@@ -15,6 +15,9 @@ concurrency:
 jobs:
   upload:
     runs-on: macos-latest
+    # Secrets live in the "production" environment (not repo-level) so
+    # this job must declare environment access to read them.
+    environment: production
     timeout-minutes: 45
 
     steps:
@@ -27,12 +30,9 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      # Pin Ruby 3.2 — 3.3 ships OpenSSL 3, which rejects ASC's EC key with
-      # "invalid curve name" in spaceship/connect_api/token.rb.
-      # See https://github.com/fastlane/fastlane/issues/20553.
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.2"
+          ruby-version: "3.3"
           bundler-cache: true
 
       - name: Materialize ASC API key
@@ -40,7 +40,7 @@ jobs:
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         run: |
           mkdir -p "$HOME/.fastlane/harvest"
-          echo "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "$HOME/.fastlane/harvest/asc_api_key.p8"
+          printf '%s' "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "$HOME/.fastlane/harvest/asc_api_key.p8"
           chmod 600 "$HOME/.fastlane/harvest/asc_api_key.p8"
 
       - name: Upload to TestFlight
