@@ -16,7 +16,11 @@ struct ShareAPIClient {
         )
     }
 
-    func createBookmark(url: URL) async throws -> Bookmark {
-        try await api.createBookmark(url: url)
+    func createBookmark(
+        url: URL,
+        extracted: ExtractedContent?,
+        html: String?
+    ) async throws -> Bookmark {
+        try await api.createBookmark(url: url, extracted: extracted, html: html)
     }
 }

@@ -211,6 +211,134 @@ final class HarvestAPITests: XCTestCase {
         }
     }
 
+    func testCreateBookmarkSendsExtractedFieldWhenProvided() async throws {
+        URLProtocolStub.enqueue(
+            .init(
+                statusCode: 202,
+                body: #"""
+                {
+                  "id": "11111111-2222-3333-4444-555555555555",
+                  "url": "https://example.com",
+                  "title": null,
+                  "summary": null,
+                  "domain": "example.com",
+                  "processing_status": "pending",
+                  "reading_status": "unread",
+                  "reading_time_minutes": null,
+                  "created_at": "2026-04-17T12:00:00Z",
+                  "updated_at": "2026-04-17T12:00:00Z"
+                }
+                """#.data(using: .utf8)!
+            ),
+            for: Endpoint.bookmarks(base: base)
+        )
+
+        let extracted = ExtractedContent(
+            title: "An Article",
+            content: "<article><p>hello</p></article>",
+            description: "A short summary.",
+            byline: "Jane Doe",
+            published: "2026-04-20T00:00:00Z",
+            wordCount: 1234,
+            extractor: "defuddle@0.18.1"
+        )
+        _ = try await makeAPI().createBookmark(
+            url: URL(string: "https://example.com")!,
+            extracted: extracted
+        )
+
+        let recorded = try XCTUnwrap(URLProtocolStub.allRecorded.first)
+        let body = try XCTUnwrap(recorded.body)
+        let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        let bookmark = try XCTUnwrap(json?["bookmark"] as? [String: Any])
+        XCTAssertEqual(bookmark["url"] as? String, "https://example.com")
+        XCTAssertNil(bookmark["html"])
+        XCTAssertNil(bookmark["extracted"])
+        let extractedJSON = try XCTUnwrap(bookmark["client_extracted"] as? [String: Any])
+        XCTAssertEqual(extractedJSON["title"] as? String, "An Article")
+        XCTAssertEqual(extractedJSON["content"] as? String, "<article><p>hello</p></article>")
+        XCTAssertEqual(extractedJSON["description"] as? String, "A short summary.")
+        XCTAssertEqual(extractedJSON["byline"] as? String, "Jane Doe")
+        XCTAssertEqual(extractedJSON["published"] as? String, "2026-04-20T00:00:00Z")
+        XCTAssertEqual(extractedJSON["word_count"] as? Int, 1234)
+        XCTAssertEqual(extractedJSON["extractor"] as? String, "defuddle@0.18.1")
+        XCTAssertNil(extractedJSON["author"])
+        XCTAssertNil(extractedJSON["image"])
+        XCTAssertNil(extractedJSON["domain"])
+        XCTAssertNil(extractedJSON["site"])
+        XCTAssertNil(extractedJSON["language"])
+    }
+
+    func testCreateBookmarkOmitsExtractedAndHtmlWhenNeitherProvided() async throws {
+        URLProtocolStub.enqueue(
+            .init(
+                statusCode: 202,
+                body: #"""
+                {
+                  "id": "11111111-2222-3333-4444-555555555555",
+                  "url": "https://example.com",
+                  "title": null,
+                  "summary": null,
+                  "domain": "example.com",
+                  "processing_status": "pending",
+                  "reading_status": "unread",
+                  "reading_time_minutes": null,
+                  "created_at": "2026-04-17T12:00:00Z",
+                  "updated_at": "2026-04-17T12:00:00Z"
+                }
+                """#.data(using: .utf8)!
+            ),
+            for: Endpoint.bookmarks(base: base)
+        )
+
+        _ = try await makeAPI().createBookmark(url: URL(string: "https://example.com")!)
+
+        let recorded = try XCTUnwrap(URLProtocolStub.allRecorded.first)
+        let body = try XCTUnwrap(recorded.body)
+        let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        let bookmark = try XCTUnwrap(json?["bookmark"] as? [String: Any])
+        XCTAssertEqual(bookmark["url"] as? String, "https://example.com")
+        XCTAssertNil(bookmark["html"])
+        XCTAssertNil(bookmark["client_extracted"])
+    }
+
+    func testCreateBookmarkSendsHtmlFieldWhenProvided() async throws {
+        URLProtocolStub.enqueue(
+            .init(
+                statusCode: 202,
+                body: #"""
+                {
+                  "id": "11111111-2222-3333-4444-555555555555",
+                  "url": "https://example.com",
+                  "title": null,
+                  "summary": null,
+                  "domain": "example.com",
+                  "processing_status": "pending",
+                  "reading_status": "unread",
+                  "reading_time_minutes": null,
+                  "created_at": "2026-04-17T12:00:00Z",
+                  "updated_at": "2026-04-17T12:00:00Z"
+                }
+                """#.data(using: .utf8)!
+            ),
+            for: Endpoint.bookmarks(base: base)
+        )
+
+        let html = "<!doctype html><html><body><article>hi</article></body></html>"
+        _ = try await makeAPI().createBookmark(
+            url: URL(string: "https://example.com")!,
+            html: html
+        )
+
+        let recorded = try XCTUnwrap(URLProtocolStub.allRecorded.first)
+        let body = try XCTUnwrap(recorded.body)
+        let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        let bookmark = try XCTUnwrap(json?["bookmark"] as? [String: Any])
+        XCTAssertEqual(bookmark["url"] as? String, "https://example.com")
+        XCTAssertEqual(bookmark["html"] as? String, html)
+        XCTAssertNil(bookmark["client_extracted"])
+    }
+
     // MARK: PATCH — 422 invalid transition
 
     func testUpdateBookmarkSurfacesInvalidTransitionAs422() async {
