@@ -4,11 +4,20 @@ import UniformTypeIdentifiers
 // Action extension for saving URLs from Safari (and any app whose share
 // sheet surfaces a web URL). The flow:
 //   1. Read a URL from inputItems (activation rule guarantees at least one).
+//      For Safari shares, also pull the post-render outerHTML supplied by
+//      SharePreprocessor.js so the backend can skip its own scrape (paywalls
+//      / bot detection don't see what the user saw).
 //   2. Read the session token from the shared keychain group — if missing,
 //      tell the user to sign in and bail.
 //   3. POST /api/v1/bookmarks via ShareAPIClient. On 202 we're done; on 422
 //      duplicate show a friendly "already saved"; other errors allow retry.
 final class ShareViewController: UIViewController {
+
+    // Hard cap on UTF-8 bytes of HTML we ship to the server. Above this we
+    // drop the field and fall back to URL-only (server scrapes). Sized to
+    // cover normal articles while staying well under share-extension memory
+    // and Rails request-body limits.
+    private static let maxHTMLBytes = 2 * 1024 * 1024
 
     private let persistence: SessionPersistence = KeychainSessionPersistence()
     private lazy var client = ShareAPIClient(persistence: persistence)
@@ -21,6 +30,7 @@ final class ShareViewController: UIViewController {
     private let spinner = UIActivityIndicatorView(style: .medium)
 
     private var incomingURL: URL?
+    private var incomingHTML: String?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,7 +53,15 @@ final class ShareViewController: UIViewController {
             return
         }
 
-        guard let url = await readSharedURL() else {
+        let preprocessor = await readPreprocessorResults()
+        let preprocessorURL = (preprocessor?["url"] as? String).flatMap(URL.init(string:))
+        let resolvedURL: URL?
+        if let preprocessorURL {
+            resolvedURL = preprocessorURL
+        } else {
+            resolvedURL = await readSharedURL()
+        }
+        guard let url = resolvedURL else {
             show(
                 title: "No URL to save",
                 message: "We couldn't find a URL in the share payload.",
@@ -53,10 +71,11 @@ final class ShareViewController: UIViewController {
             return
         }
         self.incomingURL = url
-        await save(url: url)
+        self.incomingHTML = (preprocessor?["html"] as? String).flatMap(boundedHTML)
+        await save(url: url, html: incomingHTML)
     }
 
-    private func save(url: URL) async {
+    private func save(url: URL, html: String?) async {
         show(
             title: "Saving to Harvest…",
             message: url.absoluteString,
@@ -66,7 +85,7 @@ final class ShareViewController: UIViewController {
         )
 
         do {
-            _ = try await client.createBookmark(url: url)
+            _ = try await client.createBookmark(url: url, html: html)
             show(
                 title: "Saved to Harvest",
                 message: url.absoluteString,
@@ -94,7 +113,7 @@ final class ShareViewController: UIViewController {
                 message: message,
                 primary: ("Retry", { [weak self] in
                     guard let self, let url = self.incomingURL else { return }
-                    Task { await self.save(url: url) }
+                    Task { await self.save(url: url, html: self.incomingHTML) }
                 }),
                 secondary: ("Cancel", { [weak self] in self?.finish(success: false) })
             )
@@ -102,6 +121,30 @@ final class ShareViewController: UIViewController {
     }
 
     // MARK: - Reading the share input
+
+    private func readPreprocessorResults() async -> [String: Any]? {
+        guard let items = extensionContext?.inputItems as? [NSExtensionItem] else { return nil }
+        let typeID = UTType.propertyList.identifier
+        for item in items {
+            guard let providers = item.attachments else { continue }
+            for provider in providers where provider.hasItemConformingToTypeIdentifier(typeID) {
+                let payload: NSDictionary? = await withCheckedContinuation { cont in
+                    provider.loadItem(forTypeIdentifier: typeID, options: nil) { item, _ in
+                        cont.resume(returning: item as? NSDictionary)
+                    }
+                }
+                if let results = payload?[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any] {
+                    return results
+                }
+            }
+        }
+        return nil
+    }
+
+    private func boundedHTML(_ html: String) -> String? {
+        guard !html.isEmpty, html.utf8.count <= Self.maxHTMLBytes else { return nil }
+        return html
+    }
 
     private func readSharedURL() async -> URL? {
         guard let items = extensionContext?.inputItems as? [NSExtensionItem] else { return nil }

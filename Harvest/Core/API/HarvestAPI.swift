@@ -129,8 +129,10 @@ struct HarvestAPI: Sendable {
     /// Returns 202 with the freshly-created bookmark in `pending` state. The
     /// server does fetch + extraction asynchronously — poll by re-fetching
     /// the detail to see `processing_status` transition to `ready`.
-    func createBookmark(url: URL) async throws -> Bookmark {
-        let body = ["bookmark": ["url": url.absoluteString]]
+    func createBookmark(url: URL, html: String? = nil) async throws -> Bookmark {
+        var inner: [String: String] = ["url": url.absoluteString]
+        if let html, !html.isEmpty { inner["html"] = html }
+        let body = ["bookmark": inner]
         return try await perform(
             request: makeRequest(
                 url: Endpoint.bookmarks(base: baseURL),
