@@ -159,19 +159,17 @@ final class ShareViewController: UIViewController {
     private func boundedExtracted(_ dict: [String: Any]) -> ExtractedContent? {
         guard let content = dict["content"] as? String,
               !content.isEmpty,
-              content.utf8.count <= Self.maxHTMLBytes
+              content.utf8.count <= Self.maxHTMLBytes,
+              let extractor = dict["extractor"] as? String, !extractor.isEmpty
         else { return nil }
         return ExtractedContent(
             title: (dict["title"] as? String) ?? "",
             content: content,
-            author: dict["author"] as? String,
             description: dict["description"] as? String,
+            byline: dict["byline"] as? String,
             published: dict["published"] as? String,
-            image: dict["image"] as? String,
-            domain: dict["domain"] as? String,
-            site: dict["site"] as? String,
-            language: dict["language"] as? String,
-            wordCount: dict["wordCount"] as? Int
+            wordCount: dict["wordCount"] as? Int,
+            extractor: extractor
         )
     }
 

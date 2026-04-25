@@ -236,14 +236,11 @@ final class HarvestAPITests: XCTestCase {
         let extracted = ExtractedContent(
             title: "An Article",
             content: "<article><p>hello</p></article>",
-            author: "Jane Doe",
             description: "A short summary.",
+            byline: "Jane Doe",
             published: "2026-04-20T00:00:00Z",
-            image: "https://example.com/cover.jpg",
-            domain: "example.com",
-            site: "Example",
-            language: "en",
-            wordCount: 1234
+            wordCount: 1234,
+            extractor: "defuddle@0.18.1"
         )
         _ = try await makeAPI().createBookmark(
             url: URL(string: "https://example.com")!,
@@ -256,17 +253,20 @@ final class HarvestAPITests: XCTestCase {
         let bookmark = try XCTUnwrap(json?["bookmark"] as? [String: Any])
         XCTAssertEqual(bookmark["url"] as? String, "https://example.com")
         XCTAssertNil(bookmark["html"])
-        let extractedJSON = try XCTUnwrap(bookmark["extracted"] as? [String: Any])
+        XCTAssertNil(bookmark["extracted"])
+        let extractedJSON = try XCTUnwrap(bookmark["client_extracted"] as? [String: Any])
         XCTAssertEqual(extractedJSON["title"] as? String, "An Article")
         XCTAssertEqual(extractedJSON["content"] as? String, "<article><p>hello</p></article>")
-        XCTAssertEqual(extractedJSON["author"] as? String, "Jane Doe")
         XCTAssertEqual(extractedJSON["description"] as? String, "A short summary.")
+        XCTAssertEqual(extractedJSON["byline"] as? String, "Jane Doe")
         XCTAssertEqual(extractedJSON["published"] as? String, "2026-04-20T00:00:00Z")
-        XCTAssertEqual(extractedJSON["image"] as? String, "https://example.com/cover.jpg")
-        XCTAssertEqual(extractedJSON["domain"] as? String, "example.com")
-        XCTAssertEqual(extractedJSON["site"] as? String, "Example")
-        XCTAssertEqual(extractedJSON["language"] as? String, "en")
         XCTAssertEqual(extractedJSON["word_count"] as? Int, 1234)
+        XCTAssertEqual(extractedJSON["extractor"] as? String, "defuddle@0.18.1")
+        XCTAssertNil(extractedJSON["author"])
+        XCTAssertNil(extractedJSON["image"])
+        XCTAssertNil(extractedJSON["domain"])
+        XCTAssertNil(extractedJSON["site"])
+        XCTAssertNil(extractedJSON["language"])
     }
 
     func testCreateBookmarkOmitsExtractedAndHtmlWhenNeitherProvided() async throws {
@@ -299,7 +299,7 @@ final class HarvestAPITests: XCTestCase {
         let bookmark = try XCTUnwrap(json?["bookmark"] as? [String: Any])
         XCTAssertEqual(bookmark["url"] as? String, "https://example.com")
         XCTAssertNil(bookmark["html"])
-        XCTAssertNil(bookmark["extracted"])
+        XCTAssertNil(bookmark["client_extracted"])
     }
 
     func testCreateBookmarkSendsHtmlFieldWhenProvided() async throws {
@@ -336,7 +336,7 @@ final class HarvestAPITests: XCTestCase {
         let bookmark = try XCTUnwrap(json?["bookmark"] as? [String: Any])
         XCTAssertEqual(bookmark["url"] as? String, "https://example.com")
         XCTAssertEqual(bookmark["html"] as? String, html)
-        XCTAssertNil(bookmark["extracted"])
+        XCTAssertNil(bookmark["client_extracted"])
     }
 
     // MARK: PATCH — 422 invalid transition

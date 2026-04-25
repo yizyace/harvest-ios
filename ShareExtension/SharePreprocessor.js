@@ -31,14 +31,11 @@ class HarvestPreprocessor {
                 payload.extracted = {
                     title: result.title || document.title || "",
                     content: result.content,
-                    author: result.author || "",
                     description: result.description || "",
+                    byline: result.author || "",
                     published: result.published || "",
-                    image: result.image || "",
-                    domain: result.domain || "",
-                    site: result.site || "",
-                    language: result.language || "",
-                    wordCount: result.wordCount || 0
+                    wordCount: result.wordCount || 0,
+                    extractor: "defuddle@0.18.1"
                 };
                 args.completionFunction(payload);
                 return;

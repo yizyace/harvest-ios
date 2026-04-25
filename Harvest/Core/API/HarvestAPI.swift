@@ -160,7 +160,10 @@ struct HarvestAPI: Sendable {
             let extracted: ExtractedContent?
             let html: String?
 
-            private enum CodingKeys: String, CodingKey { case url, extracted, html }
+            private enum CodingKeys: String, CodingKey {
+                case url, html
+                case extracted = "client_extracted"
+            }
 
             func encode(to encoder: Encoder) throws {
                 var container = encoder.container(keyedBy: CodingKeys.self)
