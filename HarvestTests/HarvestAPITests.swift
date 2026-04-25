@@ -211,7 +211,65 @@ final class HarvestAPITests: XCTestCase {
         }
     }
 
-    func testCreateBookmarkOmitsHtmlFieldWhenNotProvided() async throws {
+    func testCreateBookmarkSendsExtractedFieldWhenProvided() async throws {
+        URLProtocolStub.enqueue(
+            .init(
+                statusCode: 202,
+                body: #"""
+                {
+                  "id": "11111111-2222-3333-4444-555555555555",
+                  "url": "https://example.com",
+                  "title": null,
+                  "summary": null,
+                  "domain": "example.com",
+                  "processing_status": "pending",
+                  "reading_status": "unread",
+                  "reading_time_minutes": null,
+                  "created_at": "2026-04-17T12:00:00Z",
+                  "updated_at": "2026-04-17T12:00:00Z"
+                }
+                """#.data(using: .utf8)!
+            ),
+            for: Endpoint.bookmarks(base: base)
+        )
+
+        let extracted = ExtractedContent(
+            title: "An Article",
+            content: "<article><p>hello</p></article>",
+            author: "Jane Doe",
+            description: "A short summary.",
+            published: "2026-04-20T00:00:00Z",
+            image: "https://example.com/cover.jpg",
+            domain: "example.com",
+            site: "Example",
+            language: "en",
+            wordCount: 1234
+        )
+        _ = try await makeAPI().createBookmark(
+            url: URL(string: "https://example.com")!,
+            extracted: extracted
+        )
+
+        let recorded = try XCTUnwrap(URLProtocolStub.allRecorded.first)
+        let body = try XCTUnwrap(recorded.body)
+        let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        let bookmark = try XCTUnwrap(json?["bookmark"] as? [String: Any])
+        XCTAssertEqual(bookmark["url"] as? String, "https://example.com")
+        XCTAssertNil(bookmark["html"])
+        let extractedJSON = try XCTUnwrap(bookmark["extracted"] as? [String: Any])
+        XCTAssertEqual(extractedJSON["title"] as? String, "An Article")
+        XCTAssertEqual(extractedJSON["content"] as? String, "<article><p>hello</p></article>")
+        XCTAssertEqual(extractedJSON["author"] as? String, "Jane Doe")
+        XCTAssertEqual(extractedJSON["description"] as? String, "A short summary.")
+        XCTAssertEqual(extractedJSON["published"] as? String, "2026-04-20T00:00:00Z")
+        XCTAssertEqual(extractedJSON["image"] as? String, "https://example.com/cover.jpg")
+        XCTAssertEqual(extractedJSON["domain"] as? String, "example.com")
+        XCTAssertEqual(extractedJSON["site"] as? String, "Example")
+        XCTAssertEqual(extractedJSON["language"] as? String, "en")
+        XCTAssertEqual(extractedJSON["word_count"] as? Int, 1234)
+    }
+
+    func testCreateBookmarkOmitsExtractedAndHtmlWhenNeitherProvided() async throws {
         URLProtocolStub.enqueue(
             .init(
                 statusCode: 202,
@@ -241,6 +299,7 @@ final class HarvestAPITests: XCTestCase {
         let bookmark = try XCTUnwrap(json?["bookmark"] as? [String: Any])
         XCTAssertEqual(bookmark["url"] as? String, "https://example.com")
         XCTAssertNil(bookmark["html"])
+        XCTAssertNil(bookmark["extracted"])
     }
 
     func testCreateBookmarkSendsHtmlFieldWhenProvided() async throws {
@@ -277,6 +336,7 @@ final class HarvestAPITests: XCTestCase {
         let bookmark = try XCTUnwrap(json?["bookmark"] as? [String: Any])
         XCTAssertEqual(bookmark["url"] as? String, "https://example.com")
         XCTAssertEqual(bookmark["html"] as? String, html)
+        XCTAssertNil(bookmark["extracted"])
     }
 
     // MARK: PATCH — 422 invalid transition

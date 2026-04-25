@@ -30,6 +30,7 @@ final class ShareViewController: UIViewController {
     private let spinner = UIActivityIndicatorView(style: .medium)
 
     private var incomingURL: URL?
+    private var incomingExtracted: ExtractedContent?
     private var incomingHTML: String?
 
     override func viewDidLoad() {
@@ -71,11 +72,14 @@ final class ShareViewController: UIViewController {
             return
         }
         self.incomingURL = url
-        self.incomingHTML = (preprocessor?["html"] as? String).flatMap(boundedHTML)
-        await save(url: url, html: incomingHTML)
+        self.incomingExtracted = (preprocessor?["extracted"] as? [String: Any]).flatMap(boundedExtracted)
+        self.incomingHTML = incomingExtracted == nil
+            ? (preprocessor?["html"] as? String).flatMap(boundedHTML)
+            : nil
+        await save(url: url, extracted: incomingExtracted, html: incomingHTML)
     }
 
-    private func save(url: URL, html: String?) async {
+    private func save(url: URL, extracted: ExtractedContent?, html: String?) async {
         show(
             title: "Saving to Harvest…",
             message: url.absoluteString,
@@ -85,7 +89,7 @@ final class ShareViewController: UIViewController {
         )
 
         do {
-            _ = try await client.createBookmark(url: url, html: html)
+            _ = try await client.createBookmark(url: url, extracted: extracted, html: html)
             show(
                 title: "Saved to Harvest",
                 message: url.absoluteString,
@@ -113,7 +117,13 @@ final class ShareViewController: UIViewController {
                 message: message,
                 primary: ("Retry", { [weak self] in
                     guard let self, let url = self.incomingURL else { return }
-                    Task { await self.save(url: url, html: self.incomingHTML) }
+                    Task {
+                        await self.save(
+                            url: url,
+                            extracted: self.incomingExtracted,
+                            html: self.incomingHTML
+                        )
+                    }
                 }),
                 secondary: ("Cancel", { [weak self] in self?.finish(success: false) })
             )
@@ -144,6 +154,25 @@ final class ShareViewController: UIViewController {
     private func boundedHTML(_ html: String) -> String? {
         guard !html.isEmpty, html.utf8.count <= Self.maxHTMLBytes else { return nil }
         return html
+    }
+
+    private func boundedExtracted(_ dict: [String: Any]) -> ExtractedContent? {
+        guard let content = dict["content"] as? String,
+              !content.isEmpty,
+              content.utf8.count <= Self.maxHTMLBytes
+        else { return nil }
+        return ExtractedContent(
+            title: (dict["title"] as? String) ?? "",
+            content: content,
+            author: dict["author"] as? String,
+            description: dict["description"] as? String,
+            published: dict["published"] as? String,
+            image: dict["image"] as? String,
+            domain: dict["domain"] as? String,
+            site: dict["site"] as? String,
+            language: dict["language"] as? String,
+            wordCount: dict["wordCount"] as? Int
+        )
     }
 
     private func readSharedURL() async -> URL? {

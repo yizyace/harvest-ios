@@ -129,10 +129,18 @@ struct HarvestAPI: Sendable {
     /// Returns 202 with the freshly-created bookmark in `pending` state. The
     /// server does fetch + extraction asynchronously — poll by re-fetching
     /// the detail to see `processing_status` transition to `ready`.
-    func createBookmark(url: URL, html: String? = nil) async throws -> Bookmark {
-        var inner: [String: String] = ["url": url.absoluteString]
-        if let html, !html.isEmpty { inner["html"] = html }
-        let body = ["bookmark": inner]
+    func createBookmark(
+        url: URL,
+        extracted: ExtractedContent? = nil,
+        html: String? = nil
+    ) async throws -> Bookmark {
+        let body = CreateBookmarkBody(
+            bookmark: .init(
+                url: url.absoluteString,
+                extracted: extracted,
+                html: (html?.isEmpty == false) ? html : nil
+            )
+        )
         return try await perform(
             request: makeRequest(
                 url: Endpoint.bookmarks(base: baseURL),
@@ -142,6 +150,25 @@ struct HarvestAPI: Sendable {
             ),
             decodeAs: Bookmark.self
         )
+    }
+
+    private struct CreateBookmarkBody: Encodable {
+        let bookmark: Inner
+
+        struct Inner: Encodable {
+            let url: String
+            let extracted: ExtractedContent?
+            let html: String?
+
+            private enum CodingKeys: String, CodingKey { case url, extracted, html }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(url, forKey: .url)
+                try container.encodeIfPresent(extracted, forKey: .extracted)
+                try container.encodeIfPresent(html, forKey: .html)
+            }
+        }
     }
 
     func updateBookmark(id: UUID, update: BookmarkUpdate) async throws -> Bookmark {

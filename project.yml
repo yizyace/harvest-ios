@@ -84,6 +84,7 @@ targets:
       - path: Harvest/Core/Auth/Keychain.swift
       - path: Harvest/Core/Auth/SessionPersistence.swift
       - path: Harvest/Core/Models/Bookmark.swift
+      - path: Harvest/Core/Models/ExtractedContent.swift
       - path: Harvest/Core/Models/HarvestUser.swift
       - path: Harvest/Core/Models/Pagination.swift
       - path: Harvest/Core/Models/ProcessingStatus.swift
