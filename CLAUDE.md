@@ -1,6 +1,8 @@
 # Claude agent notes
 
-Instructions that apply to every session in this repo. Read these before acting.
+The canonical agent baseline for this repo is in @AGENTS.md — read it first
+(build/run, environments, MCP tools, the simulator skill, conventions). The notes
+below are Claude-specific session behavior layered on top.
 
 ## Time-sensitive: GitHub PAT rotation
 
